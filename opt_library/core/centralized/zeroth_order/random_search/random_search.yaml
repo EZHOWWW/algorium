@@ -1,0 +1,19 @@
+name: "Random Search"
+abbreviation: "RS"
+category:
+  level_1: "centralized"
+  level_2: "zeroth_order"
+tags:
+  - "convex"
+  - "non-convex"
+  - "zeroth_order"
+reference:
+  authors: ["Rastrigin, L.A."]
+  title: "The convergence of the random search method in the extremal control of a many parameter system"
+  venue: "Automation and Remote Control"
+  year: 1963
+  url: ""
+implementation:
+  file: "random_search.py"
+  class: "RandomSearch"
+  notes: "A simple zeroth-order method that relies on random sampling of the search space."
