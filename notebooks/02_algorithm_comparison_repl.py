@@ -1,0 +1,219 @@
+# %%
+import os
+import sys
+
+# This script can be run from the project root or from the notebooks directory.
+# If we are in the notebooks directory, we need to add the project root to the path.
+if os.path.basename(os.getcwd()) == "notebooks":
+    sys.path.insert(0, os.path.abspath(".."))
+
+# %%
+import matplotlib.pyplot as plt
+import numpy as np
+
+from opt_library.core.centralized.first_order.gradient_descent.gradient_descent import (
+    GradientDescent,
+)
+from opt_library.core.centralized.zeroth_order.random_search.random_search import (
+    RandomSearch,
+)
+from opt_library.core.common.base_problem import BaseProblem
+from opt_library.simulator.base_logger import ListLogger
+from opt_library.simulator.base_stopping_condition import (
+    BudgetStoppingCondition,
+)
+
+# ==============================================================================
+# Test 1: Synthetic Differentiable Function (Rosenbrock)
+# ==============================================================================
+
+
+# %%
+class RosenbrockProblem(BaseProblem):
+    """Rosenbrock function problem."""
+
+    def __init__(self, dim=2):
+        self.dim = dim
+        self.lower_bound = -5
+        self.upper_bound = 5
+
+    def evaluate(self, x: np.ndarray) -> float:
+        """Evaluate the Rosenbrock function."""
+        return float(
+            np.sum(100.0 * (x[1:] - x[:-1] ** 2.0) ** 2.0 + (1 - x[:-1]) ** 2.0)
+        )
+
+    def gradient(self, x: np.ndarray) -> np.ndarray:
+        """Compute the gradient of the Rosenbrock function."""
+        xm = x[1:-1]
+        xm_m1 = x[:-2]
+        xm_p1 = x[2:]
+        grad = np.zeros_like(x)
+        grad[1:-1] = (
+            200 * (xm - xm_m1**2) - 400 * (xm_p1 - xm**2) * xm - 2 * (1 - xm)
+        )
+        grad[0] = -400 * x[0] * (x[1] - x[0] ** 2) - 2 * (1 - x[0])
+        grad[-1] = 200 * (x[-1] - x[-2] ** 2)
+        return grad
+
+
+def plot_convergence(logs, titles):
+    """Plot convergence of algorithms."""
+    plt.figure(figsize=(10, 6))
+    for log, title in zip(logs, titles):
+        values = [item["value"] for item in log]
+        plt.plot(values, label=title)
+    plt.xlabel("Iteration")
+    plt.ylabel("Objective Function Value")
+    plt.title("Algorithm Convergence")
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+
+def plot_gradient_norm(logs, titles, problem):
+    """Plot gradient norm of algorithms."""
+    plt.figure(figsize=(10, 6))
+    for log, title in zip(logs, titles):
+        norms = [np.linalg.norm(problem.gradient(item["x"])) for item in log]
+        plt.plot(norms, label=title)
+    plt.xlabel("Iteration")
+    plt.ylabel("Gradient Norm")
+    plt.title("Gradient Norm Convergence")
+    plt.legend()
+    plt.grid(True)
+    plt.yscale("log")
+    plt.show()
+
+
+# %%
+print(
+    "=============================================================================="
+)
+print("Test 1: Synthetic Differentiable Function (Rosenbrock)")
+print(
+    "=============================================================================="
+)
+
+# --- Problem and Starting Point ---
+rosenbrock_problem = RosenbrockProblem(dim=2)
+starting_point = np.array([0.0, 0.0])
+budget = 100
+
+# --- First-Order Algorithms ---
+print("\n--- Comparing First-Order Algorithms ---")
+gd = GradientDescent(learning_rate=0.001)
+gd_logger = ListLogger()
+gd.fit(
+    problem=rosenbrock_problem,
+    starting_point=starting_point.copy(),
+    stopping_condition=BudgetStoppingCondition(budget),
+    logger=gd_logger,
+)
+
+# In the future, more first-order algorithms can be added here
+first_order_logs = [gd_logger.get_log()]
+first_order_titles = ["Gradient Descent"]
+
+plot_convergence(first_order_logs, first_order_titles)
+plot_gradient_norm(first_order_logs, first_order_titles, rosenbrock_problem)
+
+
+# --- Zeroth-Order Algorithms ---
+print("\n--- Comparing Zeroth-Order Algorithms ---")
+rs = RandomSearch(num_samples=100, search_radius=0.1)
+rs_logger = ListLogger()
+rs.fit(
+    problem=rosenbrock_problem,
+    starting_point=starting_point.copy(),
+    stopping_condition=BudgetStoppingCondition(budget),
+    logger=rs_logger,
+)
+
+# In the future, more zeroth-order algorithms can be added here
+zeroth_order_logs = [rs_logger.get_log()]
+zeroth_order_titles = ["Random Search"]
+
+plot_convergence(zeroth_order_logs, zeroth_order_titles)
+
+# %%
+# ==============================================================================
+# Test 2: Linear Regression
+# ==============================================================================
+
+
+class LinearRegressionProblem(BaseProblem):
+    """Linear Regression problem using Mean Squared Error."""
+
+    def __init__(self, X, y):
+        self.X = X
+        self.y = y
+        self.dim = X.shape[1]
+        self.lower_bound = -10
+        self.upper_bound = 10
+
+    def evaluate(self, w: np.ndarray) -> float:
+        """Mean Squared Error."""
+        error = self.X @ w - self.y
+        return float(np.mean(error**2))
+
+    def gradient(self, w: np.ndarray) -> np.ndarray:
+        """Gradient of the Mean Squared Error."""
+        return 2 * self.X.T @ (self.X @ w - self.y) / len(self.y)
+
+
+# %%
+print(
+    "\n=============================================================================="
+)
+print("Test 2: Linear Regression")
+print(
+    "=============================================================================="
+)
+
+# --- Generate Synthetic Data ---
+np.random.seed(42)
+n_samples, n_features = 100, 5
+X = np.random.rand(n_samples, n_features)
+true_w = np.random.randn(n_features)
+y = X @ true_w + 0.1 * np.random.randn(n_samples)
+
+lin_reg_problem = LinearRegressionProblem(X, y)
+starting_weights = np.zeros(n_features)
+budget_lr = 200
+
+# --- First-Order Algorithms ---
+print("\n--- Comparing First-Order Algorithms (Linear Regression) ---")
+gd_lr = GradientDescent(learning_rate=0.1)
+gd_lr_logger = ListLogger()
+gd_lr.fit(
+    problem=lin_reg_problem,
+    starting_point=starting_weights.copy(),
+    stopping_condition=BudgetStoppingCondition(budget_lr),
+    logger=gd_lr_logger,
+)
+
+first_order_lr_logs = [gd_lr_logger.get_log()]
+first_order_lr_titles = ["Gradient Descent"]
+
+plot_convergence(first_order_lr_logs, first_order_lr_titles)
+plot_gradient_norm(first_order_lr_logs, first_order_lr_titles, lin_reg_problem)
+
+
+# --- Zeroth-Order Algorithms ---
+print("\n--- Comparing Zeroth-Order Algorithms (Linear Regression) ---")
+rs_lr = RandomSearch(num_samples=100, search_radius=0.5)
+rs_lr_logger = ListLogger()
+rs_lr.fit(
+    problem=lin_reg_problem,
+    starting_point=starting_weights.copy(),
+    stopping_condition=BudgetStoppingCondition(budget_lr),
+    logger=rs_lr_logger,
+)
+
+zeroth_order_lr_logs = [rs_lr_logger.get_log()]
+zeroth_order_lr_titles = ["Random Search"]
+
+plot_convergence(zeroth_order_lr_logs, zeroth_order_lr_titles)
+
+print("\nComparison script finished.")
