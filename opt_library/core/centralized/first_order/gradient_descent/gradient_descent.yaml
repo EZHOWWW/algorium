@@ -1,0 +1,12 @@
+name: "Gradient Descent"
+abbreviation: "GD"
+category:
+    level_1: "centralized"
+    level_2: "first_order"
+tags:
+    - "convex"
+    - "first_order"
+implementation:
+    file: "gradient_descent.py"
+    class: "GradientDescent"
+    notes: "A simple first-order optimization algorithm."
