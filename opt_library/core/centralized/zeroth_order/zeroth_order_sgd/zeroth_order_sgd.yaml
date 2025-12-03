@@ -1,0 +1,19 @@
+name: "Zeroth-Order Stochastic Gradient Descent"
+abbreviation: "ZO-SGD"
+category:
+  level_1: "centralized"
+  level_2: "zeroth_order"
+tags:
+  - non-convex
+  - noisy_oracle
+  - black-box
+reference:
+  authors: ["Saeed Ghadimi", "Guanghui Lan"]
+  title: "Stochastic First- and Zeroth-Order Methods for Nonconvex Stochastic Programming"
+  venue: "SIAM Journal on Optimization"
+  year: 2013
+  url: "https://epubs.siam.org/doi/abs/10.1137/12086731X"
+implementation:
+  file: "zeroth_order_sgd.py"
+  class: "ZOSGD"
+  notes: "An implementation of the Randomized Stochastic Gradient-Free (RSGF) method for black-box optimization."

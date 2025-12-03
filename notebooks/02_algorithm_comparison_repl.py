@@ -14,8 +14,14 @@ import numpy as np
 from opt_library.core.centralized.first_order.gradient_descent.gradient_descent import (
     GradientDescent,
 )
+from opt_library.core.centralized.first_order.stochastic_gradient_descent.stochastic_gradient_descent import (
+    StochasticGradientDescent,
+)
 from opt_library.core.centralized.zeroth_order.random_search.random_search import (
     RandomSearch,
+)
+from opt_library.core.centralized.zeroth_order.zeroth_order_sgd.zeroth_order_sgd import (
+    ZOSGD,
 )
 from opt_library.core.common.base_problem import BaseProblem
 from opt_library.simulator.base_logger import ListLogger
@@ -55,6 +61,9 @@ class RosenbrockProblem(BaseProblem):
         grad[0] = -400 * x[0] * (x[1] - x[0] ** 2) - 2 * (1 - x[0])
         grad[-1] = 200 * (x[-1] - x[-2] ** 2)
         return grad
+
+    def stochastic_gradient(self, x: np.ndarray, batch: tuple) -> np.ndarray:
+        return self.gradient(x)
 
 
 def plot_convergence(logs, titles):
@@ -130,9 +139,19 @@ rs.fit(
     logger=rs_logger,
 )
 
+zosgd = ZOSGD(learning_rate=0.001, mu=0.01, batch_size=4)
+zosgd_logger = ListLogger()
+zosgd.fit(
+    problem=rosenbrock_problem,
+    starting_point=starting_point.copy(),
+    stopping_condition=BudgetStoppingCondition(budget),
+    logger=zosgd_logger,
+)
+
+
 # In the future, more zeroth-order algorithms can be added here
-zeroth_order_logs = [rs_logger.get_log()]
-zeroth_order_titles = ["Random Search"]
+zeroth_order_logs = [rs_logger.get_log(), zosgd_logger.get_log()]
+zeroth_order_titles = ["Random Search", "ZO-SGD"]
 
 plot_convergence(zeroth_order_logs, zeroth_order_titles)
 
@@ -160,6 +179,10 @@ class LinearRegressionProblem(BaseProblem):
     def gradient(self, w: np.ndarray) -> np.ndarray:
         """Gradient of the Mean Squared Error."""
         return 2 * self.X.T @ (self.X @ w - self.y) / len(self.y)
+
+    def stochastic_gradient(self, w: np.ndarray, batch: tuple) -> np.ndarray:
+        X_batch, y_batch = batch
+        return 2 * X_batch.T @ (X_batch @ w - y_batch) / len(y_batch)
 
 
 # %%
@@ -193,8 +216,18 @@ gd_lr.fit(
     logger=gd_lr_logger,
 )
 
-first_order_lr_logs = [gd_lr_logger.get_log()]
-first_order_lr_titles = ["Gradient Descent"]
+sgd_lr = StochasticGradientDescent(learning_rate=0.1, batch_size=16, epochs=10)
+sgd_lr_logger = ListLogger()
+sgd_lr.fit(
+    problem=lin_reg_problem,
+    starting_point=starting_weights.copy(),
+    stopping_condition=BudgetStoppingCondition(budget_lr),
+    logger=sgd_lr_logger,
+)
+
+
+first_order_lr_logs = [gd_lr_logger.get_log(), sgd_lr_logger.get_log()]
+first_order_lr_titles = ["Gradient Descent", "Stochastic Gradient Descent"]
 
 plot_convergence(first_order_lr_logs, first_order_lr_titles)
 plot_gradient_norm(first_order_lr_logs, first_order_lr_titles, lin_reg_problem)
@@ -211,8 +244,17 @@ rs_lr.fit(
     logger=rs_lr_logger,
 )
 
-zeroth_order_lr_logs = [rs_lr_logger.get_log()]
-zeroth_order_lr_titles = ["Random Search"]
+zosgd_lr = ZOSGD(learning_rate=0.1, mu=0.01, batch_size=4)
+zosgd_lr_logger = ListLogger()
+zosgd_lr.fit(
+    problem=lin_reg_problem,
+    starting_point=starting_weights.copy(),
+    stopping_condition=BudgetStoppingCondition(budget_lr),
+    logger=zosgd_lr_logger,
+)
+
+zeroth_order_lr_logs = [rs_lr_logger.get_log(), zosgd_lr_logger.get_log()]
+zeroth_order_lr_titles = ["Random Search", "ZO-SGD"]
 
 plot_convergence(zeroth_order_lr_logs, zeroth_order_lr_titles)
 
