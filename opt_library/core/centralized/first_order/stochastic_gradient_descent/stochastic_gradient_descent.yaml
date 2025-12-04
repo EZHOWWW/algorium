@@ -1,0 +1,19 @@
+name: "Stochastic Gradient Descent"
+abbreviation: "SGD"
+category:
+  level_1: "centralized"
+  level_2: "first_order"
+tags:
+  - convex
+  - non-convex
+  - noisy_oracle
+reference:
+  authors: ["Herbert Robbins", "Sutton Monro"]
+  title: "A Stochastic Approximation Method"
+  venue: "The Annals of Mathematical Statistics"
+  year: 1951
+  url: "https://projecteuclid.org/journals/annals-of-mathematical-statistics/volume-22/issue-3/A-Stochastic-Approximation-Method/10.1214/aoms/1177729586.full"
+implementation:
+  file: "stochastic_gradient_descent.py"
+  class: "StochasticGradientDescent"
+  notes: "A classic optimization algorithm that updates parameters using an estimate of the gradient."

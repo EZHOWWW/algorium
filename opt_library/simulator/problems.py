@@ -21,3 +21,23 @@ class Sphere(BaseProblem):
 
     def gradient(self, x: np.ndarray) -> np.ndarray:
         return 2 * x
+
+
+class LinearRegressionProblem(BaseProblem):
+    """Linear Regression problem."""
+
+    def __init__(self, X, y):
+        self.X = X
+        self.y = y
+        self.dim = X.shape[1]
+
+    def evaluate(self, w: np.ndarray) -> float:
+        error = self.X @ w - self.y
+        return float(np.mean(error**2))
+
+    def gradient(self, w: np.ndarray) -> np.ndarray:
+        return 2 * self.X.T @ (self.X @ w - self.y) / len(self.y)
+
+    def stochastic_gradient(self, w: np.ndarray, batch: tuple) -> np.ndarray:
+        X_batch, y_batch = batch
+        return 2 * X_batch.T @ (X_batch @ w - y_batch) / len(y_batch)
