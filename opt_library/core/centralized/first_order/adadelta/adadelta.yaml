@@ -1,0 +1,19 @@
+name: "Adadelta"
+abbreviation: "Adadelta"
+category:
+  level_1: "centralized"
+  level_2: "first_order"
+tags:
+  - "adaptive_learning_rate"
+  - "convex"
+  - "non-convex"
+reference:
+  authors: ["Matthew D. Zeiler"]
+  title: "ADADELTA: An Adaptive Learning Rate Method"
+  venue: "arXiv"
+  year: 2012
+  url: "https://arxiv.org/abs/1212.5701"
+implementation:
+  file: "adadelta.py"
+  class: "Adadelta"
+  notes: "Adadelta is an extension of Adagrad that seeks to reduce its aggressive, monotonically decreasing learning rate. Instead of accumulating all past squared gradients, Adadelta restricts the window of accumulated past gradients to some fixed size w."
