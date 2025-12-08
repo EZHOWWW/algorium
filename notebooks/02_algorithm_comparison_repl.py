@@ -23,11 +23,15 @@ from opt_library.core.centralized.zeroth_order.random_search.random_search impor
 from opt_library.core.centralized.zeroth_order.zeroth_order_sgd.zeroth_order_sgd import (
     ZOSGD,
 )
-from opt_library.core.common.base_problem import BaseProblem
+from opt_library.core.common.base_problem import (
+    ContinuousProblem,
+    DifferentiableProblem,
+)
 from opt_library.simulator.base_logger import ListLogger
 from opt_library.simulator.base_stopping_condition import (
     BudgetStoppingCondition,
 )
+from opt_library.simulator.problems import LinearRegressionProblem
 
 # ==============================================================================
 # Test 1: Synthetic Differentiable Function (Rosenbrock)
@@ -35,13 +39,16 @@ from opt_library.simulator.base_stopping_condition import (
 
 
 # %%
-class RosenbrockProblem(BaseProblem):
+class RosenbrockProblem(ContinuousProblem):
     """Rosenbrock function problem."""
 
     def __init__(self, dim=2):
-        self.dim = dim
-        self.lower_bound = -5
-        self.upper_bound = 5
+        super().__init__(bounds=[(-5, 5)] * dim)
+        self._dimension = dim
+
+    @property
+    def dimension(self) -> int:
+        return self._dimension
 
     def evaluate(self, x: np.ndarray) -> float:
         """Evaluate the Rosenbrock function."""
@@ -62,9 +69,6 @@ class RosenbrockProblem(BaseProblem):
         grad[-1] = 200 * (x[-1] - x[-2] ** 2)
         return grad
 
-    def stochastic_gradient(self, x: np.ndarray, batch: tuple) -> np.ndarray:
-        return self.gradient(x)
-
 
 def plot_convergence(logs, titles):
     """Plot convergence of algorithms."""
@@ -82,6 +86,9 @@ def plot_convergence(logs, titles):
 
 def plot_gradient_norm(logs, titles, problem):
     """Plot gradient norm of algorithms."""
+    if not isinstance(problem, DifferentiableProblem):
+        print("Skipping gradient norm plot for non-differentiable problem.")
+        return
     plt.figure(figsize=(10, 6))
     for log, title in zip(logs, titles):
         norms = [np.linalg.norm(problem.gradient(item["x"])) for item in log]
@@ -161,31 +168,6 @@ plot_convergence(zeroth_order_logs, zeroth_order_titles)
 # ==============================================================================
 
 
-class LinearRegressionProblem(BaseProblem):
-    """Linear Regression problem using Mean Squared Error."""
-
-    def __init__(self, X, y):
-        self.X = X
-        self.y = y
-        self.dim = X.shape[1]
-        self.lower_bound = -10
-        self.upper_bound = 10
-
-    def evaluate(self, w: np.ndarray) -> float:
-        """Mean Squared Error."""
-        error = self.X @ w - self.y
-        return float(np.mean(error**2))
-
-    def gradient(self, w: np.ndarray) -> np.ndarray:
-        """Gradient of the Mean Squared Error."""
-        return 2 * self.X.T @ (self.X @ w - self.y) / len(self.y)
-
-    def stochastic_gradient(self, w: np.ndarray, batch: tuple) -> np.ndarray:
-        X_batch, y_batch = batch
-        return 2 * X_batch.T @ (X_batch @ w - y_batch) / len(y_batch)
-
-
-# %%
 print(
     "\n=============================================================================="
 )

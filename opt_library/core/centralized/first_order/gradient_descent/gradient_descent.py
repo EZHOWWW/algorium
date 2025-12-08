@@ -3,7 +3,7 @@ from typing import Any, Optional, Tuple
 import numpy as np
 
 from opt_library.core.common.base_algorithm import BaseAlgorithm
-from opt_library.core.common.base_problem import BaseProblem
+from opt_library.core.common.base_problem import DifferentiableProblem
 from opt_library.simulator.base_logger import BaseLogger
 from opt_library.simulator.base_stopping_condition import BaseStoppingCondition
 
@@ -17,7 +17,7 @@ class GradientDescent(BaseAlgorithm):
 
     def fit(
         self,
-        problem: BaseProblem,
+        problem: DifferentiableProblem,
         starting_point: np.ndarray,
         stopping_condition: Optional[BaseStoppingCondition] = None,
         logger: Optional[BaseLogger] = None,
@@ -35,7 +35,7 @@ class GradientDescent(BaseAlgorithm):
 
         return self.x, problem.evaluate(self.x)
 
-    def step(self, problem: BaseProblem, **kwargs: Any) -> None:
+    def step(self, problem: DifferentiableProblem, **kwargs: Any) -> None:
         """Perform a single step of the optimization algorithm."""
         grad = problem.gradient(self.x)
         self.x = self.x - self.learning_rate * grad

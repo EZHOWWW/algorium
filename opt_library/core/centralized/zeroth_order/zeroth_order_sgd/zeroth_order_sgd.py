@@ -50,7 +50,7 @@ class ZOSGD(BaseAlgorithm):
     ) -> Tuple[Any, Any]:
         """Fit the algorithm to a given problem."""
         self.x = starting_point
-        self.n_dim = len(starting_point)
+        self.n_dim = problem.dimension
 
         while not stopping_condition or not stopping_condition.should_stop(
             {"x": self.x}
