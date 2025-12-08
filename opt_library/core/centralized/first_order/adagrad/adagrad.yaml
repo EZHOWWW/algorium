@@ -1,0 +1,19 @@
+name: "Adaptive Gradient Algorithm"
+abbreviation: "Adagrad"
+category:
+  level_1: "centralized"
+  level_2: "first_order"
+tags:
+  - "adaptive_learning_rate"
+  - "convex"
+  - "non-convex"
+reference:
+  authors: ["John Duchi", "Elad Hazan", "Yoram Singer"]
+  title: "Adaptive Subgradient Methods for Online Learning and Stochastic Optimization"
+  venue: "Journal of Machine Learning Research"
+  year: 2011
+  url: "http://www.jmlr.org/papers/volume12/duchi11a/duchi11a.pdf"
+implementation:
+  file: "adagrad.py"
+  class: "Adagrad"
+  notes: "Adagrad adapts the learning rate to the parameters, performing smaller updates for parameters associated with frequently occurring features, and larger updates for parameters associated with infrequent features."
