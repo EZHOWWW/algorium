@@ -8,12 +8,14 @@ from opt_library.simulator.base_logger import BaseLogger
 from opt_library.simulator.base_stopping_condition import BaseStoppingCondition
 
 
-class GradientDescent(BaseAlgorithm):
-    """Basic Gradient Descent algorithm."""
+class Momentum(BaseAlgorithm):
+    """Gradient Descent with Momentum."""
 
-    def __init__(self, learning_rate: float = 0.1):
+    def __init__(self, learning_rate: float = 0.1, gamma: float = 0.9):
         self.learning_rate = learning_rate
-        self.x = None
+        self.gamma = gamma
+        self.x: Optional[np.ndarray] = None
+        self.v: Optional[np.ndarray] = None
 
     def fit(
         self,
@@ -25,6 +27,7 @@ class GradientDescent(BaseAlgorithm):
     ) -> Tuple[Any, Any]:
         """Fit the algorithm to a given problem."""
         self.x = starting_point
+        self.v = np.zeros_like(self.x)
 
         while not stopping_condition or not stopping_condition.should_stop(
             {"x": self.x}
@@ -37,5 +40,11 @@ class GradientDescent(BaseAlgorithm):
 
     def step(self, problem: DifferentiableProblem, **kwargs: Any) -> None:
         """Perform a single step of the optimization algorithm."""
+        if self.x is None or self.v is None:
+            raise ValueError(
+                "Optimizer not initialized. Call fit() before step()."
+            )
+
         grad = problem.gradient(self.x)
-        self.x = self.x - self.learning_rate * grad
+        self.v = self.gamma * self.v + self.learning_rate * grad
+        self.x = self.x - self.v

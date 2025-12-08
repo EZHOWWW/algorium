@@ -3,7 +3,7 @@ from typing import Any, Optional, Tuple
 import numpy as np
 
 from opt_library.core.common.base_algorithm import BaseAlgorithm
-from opt_library.core.common.base_problem import BaseProblem
+from opt_library.core.common.base_problem import BaseProblem, ContinuousProblem
 from opt_library.simulator.base_logger import BaseLogger
 from opt_library.simulator.base_stopping_condition import BaseStoppingCondition
 
@@ -50,15 +50,16 @@ class RandomSearch(BaseAlgorithm):
 
         # Generate candidate solutions in the neighborhood
         candidates = [
-            self.x + self.search_radius * np.random.randn(problem.dim)
+            self.x + self.search_radius * np.random.randn(problem.dimension)
             for _ in range(self.num_samples)
         ]
 
         # Clip to bounds if they are defined
-        if hasattr(problem, "lower_bound") and hasattr(problem, "upper_bound"):
+        if isinstance(problem, ContinuousProblem) and problem.bounds:
+            lower_bounds = np.array([b[0] for b in problem.bounds])
+            upper_bounds = np.array([b[1] for b in problem.bounds])
             candidates = [
-                np.clip(c, problem.lower_bound, problem.upper_bound)
-                for c in candidates
+                np.clip(c, lower_bounds, upper_bounds) for c in candidates
             ]
 
         # Evaluate candidates

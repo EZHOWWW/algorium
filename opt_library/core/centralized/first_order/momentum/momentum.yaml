@@ -1,0 +1,19 @@
+name: "Gradient Descent with Momentum"
+abbreviation: "Momentum"
+category:
+  level_1: "centralized"
+  level_2: "first_order"
+tags:
+  - "acceleration"
+  - "convex"
+  - "non-convex"
+reference:
+  authors: ["David E. Rumelhart", "Geoffrey E. Hinton", "Ronald J. Williams"]
+  title: "Learning representations by back-propagating errors"
+  venue: "Nature"
+  year: 1986
+  url: "https://www.nature.com/articles/323533a0"
+implementation:
+  file: "momentum.py"
+  class: "Momentum"
+  notes: "A basic implementation of gradient descent with momentum."

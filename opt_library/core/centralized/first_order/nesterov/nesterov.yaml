@@ -1,0 +1,19 @@
+name: "Nesterov Accelerated Gradient"
+abbreviation: "NAG"
+category:
+  level_1: "centralized"
+  level_2: "first_order"
+tags:
+  - "acceleration"
+  - "convex"
+  - "non-convex"
+reference:
+  authors: ["Yurii Nesterov"]
+  title: "A method for unconstrained convex minimization problem with the rate of convergence O(1/k^2)"
+  venue: "Doklady AN SSSR"
+  year: 1983
+  url: "http://www.mathnet.ru/links/e3c9bbd45e31a68f5c7c2370630c5f47/dan23116.pdf"
+implementation:
+  file: "nesterov.py"
+  class: "Nesterov"
+  notes: "An implementation of Nesterov's accelerated gradient method."

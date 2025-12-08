@@ -3,7 +3,7 @@ from typing import Any, Optional, Tuple
 import numpy as np
 
 from opt_library.core.common.base_algorithm import BaseAlgorithm
-from opt_library.core.common.base_problem import BaseProblem
+from opt_library.core.common.base_problem import FiniteSumProblem
 from opt_library.simulator.base_logger import BaseLogger
 from opt_library.simulator.base_stopping_condition import BaseStoppingCondition
 
@@ -15,16 +15,13 @@ class StochasticGradientDescent(BaseAlgorithm):
         self, learning_rate: float = 0.1, batch_size: int = 1, epochs: int = 10
     ):
         self.learning_rate = learning_rate
-
         self.batch_size = batch_size
-
         self.epochs = epochs
-
         self.x = None
 
     def fit(
         self,
-        problem: BaseProblem,
+        problem: FiniteSumProblem,
         starting_point: np.ndarray,
         stopping_condition: Optional[BaseStoppingCondition] = None,
         logger: Optional[BaseLogger] = None,
@@ -39,7 +36,7 @@ class StochasticGradientDescent(BaseAlgorithm):
                 {"x": self.x}
             ):
                 break
-            self.step(problem=problem, X=problem.X, y=problem.y)
+            self.step(problem=problem)
 
             if logger:
                 logger.log(
@@ -52,17 +49,13 @@ class StochasticGradientDescent(BaseAlgorithm):
 
         return self.x, problem.evaluate(self.x)
 
-    def step(
-        self, problem: BaseProblem, X: np.ndarray, y: np.ndarray, **kwargs: Any
-    ) -> None:
+    def step(self, problem: FiniteSumProblem, **kwargs: Any) -> None:
         """Perform a single step of the optimization algorithm."""
 
-        n_samples = X.shape[0]
+        n_samples = problem.n_samples
 
         indices = np.random.choice(n_samples, self.batch_size, replace=False)
 
-        X_batch, y_batch = X[indices], y[indices]
-
-        grad = problem.stochastic_gradient(self.x, batch=(X_batch, y_batch))
+        grad = problem.gradient_batch(self.x, indices=indices)
 
         self.x = self.x - self.learning_rate * grad
