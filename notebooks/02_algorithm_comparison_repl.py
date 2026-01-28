@@ -11,6 +11,9 @@ if os.path.basename(os.getcwd()) == "notebooks":
 import matplotlib.pyplot as plt
 import numpy as np
 
+# Set random seed for reproducibility
+np.random.seed(42)
+
 from opt_library.core.centralized.first_order.gradient_descent.gradient_descent import (
     GradientDescent,
 )
@@ -137,7 +140,7 @@ plot_gradient_norm(first_order_logs, first_order_titles, rosenbrock_problem)
 
 # --- Zeroth-Order Algorithms ---
 print("\n--- Comparing Zeroth-Order Algorithms ---")
-rs = RandomSearch(num_samples=100, search_radius=0.1)
+rs = RandomSearch(num_samples=1, search_radius=0.1)
 rs_logger = ListLogger()
 rs.fit(
     problem=rosenbrock_problem,
@@ -217,7 +220,7 @@ plot_gradient_norm(first_order_lr_logs, first_order_lr_titles, lin_reg_problem)
 
 # --- Zeroth-Order Algorithms ---
 print("\n--- Comparing Zeroth-Order Algorithms (Linear Regression) ---")
-rs_lr = RandomSearch(num_samples=100, search_radius=0.5)
+rs_lr = RandomSearch(num_samples=4, search_radius=0.5)
 rs_lr_logger = ListLogger()
 rs_lr.fit(
     problem=lin_reg_problem,
