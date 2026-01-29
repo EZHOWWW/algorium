@@ -19,7 +19,7 @@ from opt_library.core.centralized.first_order.nesterov.nesterov import Nesterov
 from opt_library.core.common.base_problem import DifferentiableProblem
 from opt_library.simulator.base_logger import ListLogger
 from opt_library.simulator.base_stopping_condition import (
-    BudgetStoppingCondition,
+    IterationBudget,
 )
 from opt_library.simulator.problems import (
     Ackley,
@@ -49,12 +49,14 @@ def plot_convergence_paths(
     x = np.linspace(x_bounds[0], x_bounds[1], 400)
     y = np.linspace(y_bounds[0], y_bounds[1], 400)
     X, Y = np.meshgrid(x, y)
+    problem.reset_fevals()
     Z = np.array(
         [
-            problem.evaluate(np.array([x, y]))
+            problem._evaluate(np.array([x, y]))
             for x, y in zip(X.ravel(), Y.ravel())
         ]
     ).reshape(X.shape)
+    problem.reset_fevals()
 
     plt.figure(figsize=(12, 8))
     plt.contour(
@@ -80,35 +82,53 @@ def plot_convergence_paths(
 
 
 def plot_value_difference(
-    logs: list, titles: list, problem: DifferentiableProblem
+    logs: list,
+    titles: list,
+    problem: DifferentiableProblem,
+    xlim=None,
+    ylim=None,
 ):
     """Plots f(x_k) - f(x*) in log scale."""
     min_value = problem.min_value
     plt.figure(figsize=(10, 6))
     for log, title in zip(logs, titles):
+        fevals = [item["fevals"] for item in log]
         values = [item["value"] - min_value for item in log]
-        plt.plot(values, label=title)
-    plt.xlabel("Iteration")
+        plt.plot(fevals, values, label=title)
+    plt.xlabel("Number of Oracle Calls")
     plt.ylabel("f(x_k) - f(x*)")
     plt.title(f"Value Difference on {problem.__class__.__name__} (Log Scale)")
     plt.yscale("log")
+    if xlim:
+        plt.xlim(*xlim)
+    if ylim:
+        plt.ylim(*ylim)
     plt.legend()
     plt.grid(True)
     plt.show()
 
 
 def plot_gradient_norm(
-    logs: list, titles: list, problem: DifferentiableProblem
+    logs: list,
+    titles: list,
+    problem: DifferentiableProblem,
+    xlim=None,
+    ylim=None,
 ):
     """Plot gradient norm of algorithms."""
     plt.figure(figsize=(10, 6))
     for log, title in zip(logs, titles):
+        fevals = [item["fevals"] for item in log]
         norms = [np.linalg.norm(problem.gradient(item["x"])) for item in log]
-        plt.plot(norms, label=title)
-    plt.xlabel("Iteration")
+        plt.plot(fevals, norms, label=title)
+    plt.xlabel("Number of Oracle Calls")
     plt.ylabel("Gradient Norm")
     plt.title(f"Gradient Norm on {problem.__class__.__name__} (Log Scale)")
     plt.yscale("log")
+    if xlim:
+        plt.xlim(*xlim)
+    if ylim:
+        plt.ylim(*ylim)
     plt.legend()
     plt.grid(True)
     plt.show()
@@ -127,22 +147,27 @@ def run_and_plot_comparison(
 
     logs = []
     titles = []
+    max_fevals = 0
 
     for alg_class, params, name in algorithms:
+        problem.reset_fevals()
         alg = alg_class(**params)
         logger = ListLogger()
         print(f"Running {name}...")
         alg.fit(
             problem=problem,
             starting_point=starting_point.copy(),
-            stopping_condition=BudgetStoppingCondition(budget),
+            stopping_condition=IterationBudget(budget),
             logger=logger,
         )
-        logs.append(logger.get_log())
+        log = logger.get_log()
+        logs.append(log)
         titles.append(name)
+        if log:
+            max_fevals = max(max_fevals, log[-1]["fevals"])
 
-    plot_gradient_norm(logs, titles, problem)
-    plot_value_difference(logs, titles, problem)
+    plot_gradient_norm(logs, titles, problem, xlim=(0, max_fevals))
+    plot_value_difference(logs, titles, problem, xlim=(0, max_fevals))
     if problem.dimension == 2:
         plot_convergence_paths(problem, logs, titles)
 
@@ -151,10 +176,12 @@ def run_and_plot_comparison(
 # Test Problems
 # ==============================================================================
 
+
 # %%
 # --- Problem 1: Rosenbrock (already in a file, but for notebooks it's fine) ---
 class RosenbrockProblem(DifferentiableProblem):
     def __init__(self, dim=2):
+        super().__init__()
         self._dimension = dim
         self.min_value = 0.0
         self.min_point = np.ones(dim)
@@ -164,7 +191,7 @@ class RosenbrockProblem(DifferentiableProblem):
     def dimension(self) -> int:
         return self._dimension
 
-    def evaluate(self, x: np.ndarray) -> float:
+    def _evaluate(self, x: np.ndarray) -> float:
         return float(
             sum(100.0 * (x[1:] - x[:-1] ** 2.0) ** 2.0 + (1 - x[:-1]) ** 2.0)
         )
@@ -235,7 +262,7 @@ gd_solver = GradientDescent(learning_rate=0.1)
 final_w, min_val = gd_solver.fit(
     problem=lin_reg_problem,
     starting_point=np.zeros(n_features),
-    stopping_condition=BudgetStoppingCondition(1000),
+    stopping_condition=IterationBudget(1000),
 )
 lin_reg_problem.min_value = min_val
 lin_reg_problem.min_point = final_w
