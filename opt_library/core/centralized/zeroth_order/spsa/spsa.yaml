@@ -1,0 +1,6 @@
+# Default parameters for the SPSA algorithm
+a: 0.05
+c: 0.01
+alpha: 0.602
+gamma: 0.101
+A: 10.0

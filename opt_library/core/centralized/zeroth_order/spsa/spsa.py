@@ -1,4 +1,4 @@
-from typing import Any, Callable, Optional, Tuple
+from typing import Any, Optional, Tuple
 
 import numpy as np
 
@@ -8,41 +8,25 @@ from opt_library.simulator.base_logger import BaseLogger
 from opt_library.simulator.base_stopping_condition import BaseStoppingCondition
 
 
-class ZOSGD(BaseAlgorithm):
-    """Zeroth-Order Stochastic Gradient Descent (ZO-SGD), also known as RSGF."""
+class SPSA(BaseAlgorithm):
+    """Simultaneous Perturbation Stochastic Approximation (SPSA) optimizer."""
 
     def __init__(
         self,
-        learning_rate: float = 0.1,
-        mu: float = 1e-3,
-        batch_size: int = 1,
+        a: float = 0.05,
+        c: float = 0.01,
+        alpha: float = 0.602,
+        gamma: float = 0.101,
+        A: float = 10.0,
     ):
-        self.learning_rate = learning_rate
-        self.mu = mu
-        self.batch_size = batch_size
+        self.a = a
+        self.c = c
+        self.alpha = alpha
+        self.gamma = gamma
+        self.A = A
         self.x: Optional[np.ndarray] = None
         self.y: Optional[float] = None
-        self.n_dim = None
-
-    def _sample_unit_gaussian(self) -> np.ndarray:
-        """Generate a random vector from N(0, I)."""
-        return np.random.standard_normal(self.n_dim)
-
-    def _estimate_gradient(
-        self,
-        func: Callable[[np.ndarray], float],
-        x: np.ndarray,
-        y: float,
-        u: np.ndarray,
-    ) -> np.ndarray:
-        """
-        Implement Equation (3.12) from the paper:
-        G_mu = [(F(x + mu*u) - F(x)) / mu] * u
-        """
-        val_perturbed = func(x + self.mu * u)
-        diff = (val_perturbed - y) / self.mu
-        grad_estimate = diff * u
-        return grad_estimate
+        self.k = 0
 
     def fit(
         self,
@@ -55,7 +39,7 @@ class ZOSGD(BaseAlgorithm):
         """Fit the algorithm to a given problem."""
         self.x = starting_point
         self.y = problem.evaluate(self.x)
-        self.n_dim = problem.dimension
+        self.k = 0
 
         if logger:
             logger.log(
@@ -66,6 +50,7 @@ class ZOSGD(BaseAlgorithm):
             {"x": self.x, "fevals": problem.get_fevals()}
         ):
             self.step(problem=problem)
+            self.k += 1
             if logger:
                 logger.log(
                     {
@@ -79,15 +64,38 @@ class ZOSGD(BaseAlgorithm):
 
     def step(self, problem: BaseProblem, **kwargs: Any) -> None:
         """Perform a single step of the optimization algorithm."""
-        grad_estimate = np.zeros(self.n_dim)
-        for _ in range(self.batch_size):
-            u_k = self._sample_unit_gaussian()
-            grad_estimate += self._estimate_gradient(
-                problem.evaluate, self.x, self.y, u_k
+        if self.x is None:
+            raise ValueError(
+                "Optimizer not initialized. Call fit() before step()."
             )
 
-        grad_estimate /= self.batch_size
-        self.x = self.x - self.learning_rate * grad_estimate
+        # Calculate gain sequences
+        ak = self.a / (self.A + self.k + 1) ** self.alpha
+        ck = self.c / (self.k + 1) ** self.gamma
+
+        # Generate random perturbation vector (Bernoulli distribution)
+        delta = np.random.choice([-1, 1], size=problem.dimension)
+
+        # Evaluate function at two points
+        x_plus = self.x + ck * delta
+        x_minus = self.x - ck * delta
+
+        y_plus = problem.evaluate(x_plus)
+        y_minus = problem.evaluate(x_minus)
+
+        # Estimate gradient
+        denominator = 2 * ck * delta
+        # Avoid division by zero if ck is close to zero.
+        # Where the denominator is zero, the gradient estimate will be zero.
+        grad_est = np.divide(
+            (y_plus - y_minus),
+            denominator,
+            out=np.zeros_like(delta, dtype=float),
+            where=denominator != 0,
+        )
+
+        # Update x
+        self.x = self.x - ak * grad_est
 
         # Clip to bounds if they are defined
         if isinstance(problem, ContinuousProblem) and problem.bounds:

@@ -24,7 +24,7 @@ class Sphere(ContinuousProblem):
     def dimension(self) -> int:
         return self._dimension
 
-    def evaluate(self, x: np.ndarray) -> float:
+    def _evaluate(self, x: np.ndarray) -> float:
         return float(np.sum(x**2))
 
     def gradient(self, x: np.ndarray) -> np.ndarray:
@@ -35,6 +35,7 @@ class LinearRegressionProblem(FiniteSumProblem):
     """Linear Regression problem."""
 
     def __init__(self, X, y):
+        super().__init__()
         self.X = X
         self.y = y
         self._dimension = X.shape[1]
@@ -47,7 +48,7 @@ class LinearRegressionProblem(FiniteSumProblem):
     def n_samples(self) -> int:
         return self.X.shape[0]
 
-    def evaluate(self, w: np.ndarray) -> float:
+    def _evaluate(self, w: np.ndarray) -> float:
         error = self.X @ w - self.y
         return float(np.mean(error**2))
 
@@ -71,7 +72,7 @@ class Beale(ContinuousProblem):
     def dimension(self) -> int:
         return 2
 
-    def evaluate(self, x: np.ndarray) -> float:
+    def _evaluate(self, x: np.ndarray) -> float:
         if x.shape[0] != 2:
             raise ValueError("Beale function is defined for 2 dimensions only.")
         x_val, y_val = x[0], x[1]
@@ -124,7 +125,7 @@ class Ackley(ContinuousProblem):
     def dimension(self) -> int:
         return self._dimension
 
-    def evaluate(self, x: np.ndarray) -> float:
+    def _evaluate(self, x: np.ndarray) -> float:
         sum_sq_term = -self.b * np.sqrt(np.sum(x**2) / self.dimension)
         cos_term = np.sum(np.cos(self.c * x)) / self.dimension
 

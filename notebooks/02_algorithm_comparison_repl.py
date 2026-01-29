@@ -20,6 +20,7 @@ from opt_library.core.centralized.first_order.gradient_descent.gradient_descent 
 from opt_library.core.centralized.first_order.stochastic_gradient_descent.stochastic_gradient_descent import (
     StochasticGradientDescent,
 )
+from opt_library.core.centralized.zeroth_order.mezo.mezo import MeZO
 from opt_library.core.centralized.zeroth_order.random_search.random_search import (
     RandomSearch,
 )
@@ -32,7 +33,8 @@ from opt_library.core.common.base_problem import (
 )
 from opt_library.simulator.base_logger import ListLogger
 from opt_library.simulator.base_stopping_condition import (
-    BudgetStoppingCondition,
+    FevalsBudget,
+    IterationBudget,
 )
 from opt_library.simulator.problems import LinearRegressionProblem
 
@@ -53,7 +55,7 @@ class RosenbrockProblem(ContinuousProblem):
     def dimension(self) -> int:
         return self._dimension
 
-    def evaluate(self, x: np.ndarray) -> float:
+    def _evaluate(self, x: np.ndarray) -> float:
         """Evaluate the Rosenbrock function."""
         return float(
             np.sum(100.0 * (x[1:] - x[:-1] ** 2.0) ** 2.0 + (1 - x[:-1]) ** 2.0)
@@ -73,32 +75,54 @@ class RosenbrockProblem(ContinuousProblem):
         return grad
 
 
-def plot_convergence(logs, titles):
+def plot_convergence(logs, titles, use_fevals=False, xlim=None, ylim=None):
     """Plot convergence of algorithms."""
     plt.figure(figsize=(10, 6))
     for log, title in zip(logs, titles):
+        if use_fevals:
+            x_axis = [item["fevals"] for item in log]
+            plt.xlabel("Number of Oracle Calls")
+        else:
+            x_axis = range(len(log))
+            plt.xlabel("Iteration")
         values = [item["value"] for item in log]
-        plt.plot(values, label=title)
-    plt.xlabel("Iteration")
+        plt.plot(x_axis, values, label=title)
+
     plt.ylabel("Objective Function Value")
     plt.title("Algorithm Convergence")
+    if xlim:
+        plt.xlim(*xlim)
+    if ylim:
+        plt.ylim(*ylim)
     plt.legend()
     plt.grid(True)
     plt.show()
 
 
-def plot_gradient_norm(logs, titles, problem):
+def plot_gradient_norm(
+    logs, titles, problem, use_fevals=False, xlim=None, ylim=None
+):
     """Plot gradient norm of algorithms."""
     if not isinstance(problem, DifferentiableProblem):
         print("Skipping gradient norm plot for non-differentiable problem.")
         return
     plt.figure(figsize=(10, 6))
     for log, title in zip(logs, titles):
+        if use_fevals:
+            x_axis = [item["fevals"] for item in log]
+            plt.xlabel("Number of Oracle Calls")
+        else:
+            x_axis = range(len(log))
+            plt.xlabel("Iteration")
         norms = [np.linalg.norm(problem.gradient(item["x"])) for item in log]
-        plt.plot(norms, label=title)
-    plt.xlabel("Iteration")
+        plt.plot(x_axis, norms, label=title)
+
     plt.ylabel("Gradient Norm")
     plt.title("Gradient Norm Convergence")
+    if xlim:
+        plt.xlim(*xlim)
+    if ylim:
+        plt.ylim(*ylim)
     plt.legend()
     plt.grid(True)
     plt.yscale("log")
@@ -117,20 +141,21 @@ print(
 # --- Problem and Starting Point ---
 rosenbrock_problem = RosenbrockProblem(dim=2)
 starting_point = np.array([0.0, 0.0])
-budget = 100
+iteration_budget = 100
+fevals_budget = 2000
 
 # --- First-Order Algorithms ---
 print("\n--- Comparing First-Order Algorithms ---")
+rosenbrock_problem.reset_fevals()
 gd = GradientDescent(learning_rate=0.001)
 gd_logger = ListLogger()
 gd.fit(
     problem=rosenbrock_problem,
     starting_point=starting_point.copy(),
-    stopping_condition=BudgetStoppingCondition(budget),
+    stopping_condition=IterationBudget(iteration_budget),
     logger=gd_logger,
 )
 
-# In the future, more first-order algorithms can be added here
 first_order_logs = [gd_logger.get_log()]
 first_order_titles = ["Gradient Descent"]
 
@@ -140,30 +165,49 @@ plot_gradient_norm(first_order_logs, first_order_titles, rosenbrock_problem)
 
 # --- Zeroth-Order Algorithms ---
 print("\n--- Comparing Zeroth-Order Algorithms ---")
-rs = RandomSearch(num_samples=1, search_radius=0.1)
+rosenbrock_problem.reset_fevals()
+rs = RandomSearch(num_samples=10, search_radius=0.1)
 rs_logger = ListLogger()
 rs.fit(
     problem=rosenbrock_problem,
     starting_point=starting_point.copy(),
-    stopping_condition=BudgetStoppingCondition(budget),
+    stopping_condition=FevalsBudget(fevals_budget),
     logger=rs_logger,
 )
 
+rosenbrock_problem.reset_fevals()
 zosgd = ZOSGD(learning_rate=0.001, mu=0.01, batch_size=4)
 zosgd_logger = ListLogger()
 zosgd.fit(
     problem=rosenbrock_problem,
     starting_point=starting_point.copy(),
-    stopping_condition=BudgetStoppingCondition(budget),
+    stopping_condition=FevalsBudget(fevals_budget),
     logger=zosgd_logger,
 )
 
+rosenbrock_problem.reset_fevals()
+mezo = MeZO(learning_rate=0.001, epsilon=0.01)
+mezo_logger = ListLogger()
+mezo.fit(
+    problem=rosenbrock_problem,
+    starting_point=starting_point.copy(),
+    stopping_condition=FevalsBudget(fevals_budget),
+    logger=mezo_logger,
+)
 
-# In the future, more zeroth-order algorithms can be added here
-zeroth_order_logs = [rs_logger.get_log(), zosgd_logger.get_log()]
-zeroth_order_titles = ["Random Search", "ZO-SGD"]
+zeroth_order_logs = [
+    rs_logger.get_log(),
+    zosgd_logger.get_log(),
+    mezo_logger.get_log(),
+]
+zeroth_order_titles = ["Random Search", "ZO-SGD", "MeZO"]
 
-plot_convergence(zeroth_order_logs, zeroth_order_titles)
+plot_convergence(
+    zeroth_order_logs,
+    zeroth_order_titles,
+    use_fevals=True,
+    xlim=(0, fevals_budget),
+)
 
 # %%
 # ==============================================================================
@@ -188,34 +232,38 @@ y = X @ true_w + 0.1 * np.random.randn(n_samples)
 
 lin_reg_problem = LinearRegressionProblem(X, y)
 starting_weights = np.zeros(n_features)
-budget_lr = 200
+iteration_budget_lr = 200
+fevals_budget_lr = 4000
 
 # --- First-Order Algorithms ---
 print("\n--- Comparing First-Order Algorithms (Linear Regression) ---")
+lin_reg_problem.reset_fevals()
 gd_lr = GradientDescent(learning_rate=0.1)
 gd_lr_logger = ListLogger()
 gd_lr.fit(
     problem=lin_reg_problem,
     starting_point=starting_weights.copy(),
-    stopping_condition=BudgetStoppingCondition(budget_lr),
+    stopping_condition=IterationBudget(iteration_budget_lr),
     logger=gd_lr_logger,
 )
 
+lin_reg_problem.reset_fevals()
 sgd_lr = StochasticGradientDescent(learning_rate=0.1, batch_size=16, epochs=10)
 sgd_lr_logger = ListLogger()
 sgd_lr.fit(
     problem=lin_reg_problem,
     starting_point=starting_weights.copy(),
-    stopping_condition=BudgetStoppingCondition(budget_lr),
+    stopping_condition=IterationBudget(iteration_budget_lr),
     logger=sgd_lr_logger,
 )
-
 
 first_order_lr_logs = [gd_lr_logger.get_log(), sgd_lr_logger.get_log()]
 first_order_lr_titles = ["Gradient Descent", "Stochastic Gradient Descent"]
 
-plot_convergence(first_order_lr_logs, first_order_lr_titles)
-plot_gradient_norm(first_order_lr_logs, first_order_lr_titles, lin_reg_problem)
+plot_convergence(first_order_lr_logs, first_order_lr_titles, use_fevals=True)
+plot_gradient_norm(
+    first_order_lr_logs, first_order_lr_titles, lin_reg_problem, use_fevals=True
+)
 
 
 # --- Zeroth-Order Algorithms ---
@@ -225,22 +273,42 @@ rs_lr_logger = ListLogger()
 rs_lr.fit(
     problem=lin_reg_problem,
     starting_point=starting_weights.copy(),
-    stopping_condition=BudgetStoppingCondition(budget_lr),
+    stopping_condition=FevalsBudget(fevals_budget_lr),
     logger=rs_lr_logger,
 )
 
+lin_reg_problem.reset_fevals()
 zosgd_lr = ZOSGD(learning_rate=0.1, mu=0.01, batch_size=4)
 zosgd_lr_logger = ListLogger()
 zosgd_lr.fit(
     problem=lin_reg_problem,
     starting_point=starting_weights.copy(),
-    stopping_condition=BudgetStoppingCondition(budget_lr),
+    stopping_condition=FevalsBudget(fevals_budget_lr),
     logger=zosgd_lr_logger,
 )
 
-zeroth_order_lr_logs = [rs_lr_logger.get_log(), zosgd_lr_logger.get_log()]
-zeroth_order_lr_titles = ["Random Search", "ZO-SGD"]
+lin_reg_problem.reset_fevals()
+mezo_lr = MeZO(learning_rate=0.1, epsilon=0.01)
+mezo_lr_logger = ListLogger()
+mezo_lr.fit(
+    problem=lin_reg_problem,
+    starting_point=starting_weights.copy(),
+    stopping_condition=FevalsBudget(fevals_budget_lr),
+    logger=mezo_lr_logger,
+)
 
-plot_convergence(zeroth_order_lr_logs, zeroth_order_lr_titles)
+zeroth_order_lr_logs = [
+    rs_lr_logger.get_log(),
+    zosgd_lr_logger.get_log(),
+    mezo_lr_logger.get_log(),
+]
+zeroth_order_lr_titles = ["Random Search", "ZO-SGD", "MeZO"]
+
+plot_convergence(
+    zeroth_order_lr_logs,
+    zeroth_order_lr_titles,
+    use_fevals=True,
+    xlim=(0, fevals_budget_lr),
+)
 
 print("\nComparison script finished.")
