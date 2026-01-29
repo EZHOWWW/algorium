@@ -11,6 +11,7 @@ if os.path.basename(os.getcwd()) == "notebooks":
 import matplotlib.pyplot as plt
 import numpy as np
 
+from opt_library.core.centralized.zeroth_order.mezo.mezo import MeZO
 from opt_library.core.centralized.zeroth_order.random_search.random_search import (
     RandomSearch,
 )
@@ -155,6 +156,7 @@ rosenbrock_algorithms = [
     (RandomSearch, {"num_samples": 20, "search_radius": 1.0}, "Random Search"),
     (ZOSGD, {"learning_rate": 1e-3, "mu": 0.1}, "ZO-SGD (lr=1e-3)"),
     (SPSA, {"a": 1e-3, "c": 0.1}, "SPSA (a=1e-3)"),
+    (MeZO, {"learning_rate": 1e-3, "epsilon": 0.1}, "MeZO (lr=1e-3)"),
 ]
 run_comparison(
     rosenbrock_problem,
@@ -171,6 +173,7 @@ sphere_algorithms = [
     (RandomSearch, {"num_samples": 20, "search_radius": 0.5}, "Random Search"),
     (ZOSGD, {"learning_rate": 1e-2, "mu": 0.1}, "ZO-SGD (lr=1e-2)"),
     (SPSA, {"a": 1e-2, "c": 0.1}, "SPSA (a=1e-2)"),
+    (MeZO, {"learning_rate": 1e-2, "epsilon": 0.1}, "MeZO (lr=1e-2)"),
 ]
 run_comparison(
     sphere_problem,
@@ -187,6 +190,7 @@ beale_algorithms = [
     (RandomSearch, {"num_samples": 20, "search_radius": 1.0}, "Random Search"),
     (ZOSGD, {"learning_rate": 1e-4, "mu": 0.1}, "ZO-SGD (lr=1e-4)"),
     (SPSA, {"a": 1e-4, "c": 0.1}, "SPSA (a=1e-4)"),
+    (MeZO, {"learning_rate": 1e-4, "epsilon": 0.1}, "MeZO (lr=1e-4)"),
 ]
 run_comparison(
     beale_problem, starting_point_beale, fevals_budget_beale, beale_algorithms
@@ -208,6 +212,7 @@ ackley_algorithms = [
         {"a": 1e-1, "c": 1.0, "alpha": 0.602, "gamma": 0.101},
         "SPSA (a=1e-1, c=1.0)",
     ),
+    (MeZO, {"learning_rate": 1e-1, "epsilon": 1.0}, "MeZO (lr=1e-1, e=1.0)"),
 ]
 run_comparison(
     ackley_problem,
@@ -231,6 +236,7 @@ lr_algorithms = [
     (RandomSearch, {"num_samples": 20, "search_radius": 0.5}, "Random Search"),
     (ZOSGD, {"learning_rate": 0.1, "mu": 0.01}, "ZO-SGD"),
     (SPSA, {"a": 0.1, "c": 0.1}, "SPSA"),
+    (MeZO, {"learning_rate": 0.1, "epsilon": 0.1}, "MeZO"),
 ]
 run_comparison(
     lin_reg_problem, starting_weights, fevals_budget_lr, lr_algorithms

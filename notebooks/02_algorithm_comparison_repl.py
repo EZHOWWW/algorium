@@ -17,6 +17,7 @@ from opt_library.core.centralized.first_order.gradient_descent.gradient_descent 
 from opt_library.core.centralized.first_order.stochastic_gradient_descent.stochastic_gradient_descent import (
     StochasticGradientDescent,
 )
+from opt_library.core.centralized.zeroth_order.mezo.mezo import MeZO
 from opt_library.core.centralized.zeroth_order.random_search.random_search import (
     RandomSearch,
 )
@@ -181,8 +182,22 @@ zosgd.fit(
     logger=zosgd_logger,
 )
 
-zeroth_order_logs = [rs_logger.get_log(), zosgd_logger.get_log()]
-zeroth_order_titles = ["Random Search", "ZO-SGD"]
+rosenbrock_problem.reset_fevals()
+mezo = MeZO(learning_rate=0.001, epsilon=0.01)
+mezo_logger = ListLogger()
+mezo.fit(
+    problem=rosenbrock_problem,
+    starting_point=starting_point.copy(),
+    stopping_condition=FevalsBudget(fevals_budget),
+    logger=mezo_logger,
+)
+
+zeroth_order_logs = [
+    rs_logger.get_log(),
+    zosgd_logger.get_log(),
+    mezo_logger.get_log(),
+]
+zeroth_order_titles = ["Random Search", "ZO-SGD", "MeZO"]
 
 plot_convergence(
     zeroth_order_logs,
@@ -270,8 +285,22 @@ zosgd_lr.fit(
     logger=zosgd_lr_logger,
 )
 
-zeroth_order_lr_logs = [rs_lr_logger.get_log(), zosgd_lr_logger.get_log()]
-zeroth_order_lr_titles = ["Random Search", "ZO-SGD"]
+lin_reg_problem.reset_fevals()
+mezo_lr = MeZO(learning_rate=0.1, epsilon=0.01)
+mezo_lr_logger = ListLogger()
+mezo_lr.fit(
+    problem=lin_reg_problem,
+    starting_point=starting_weights.copy(),
+    stopping_condition=FevalsBudget(fevals_budget_lr),
+    logger=mezo_lr_logger,
+)
+
+zeroth_order_lr_logs = [
+    rs_lr_logger.get_log(),
+    zosgd_lr_logger.get_log(),
+    mezo_lr_logger.get_log(),
+]
+zeroth_order_lr_titles = ["Random Search", "ZO-SGD", "MeZO"]
 
 plot_convergence(
     zeroth_order_lr_logs,
