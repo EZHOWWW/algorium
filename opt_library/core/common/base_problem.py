@@ -10,6 +10,9 @@ class BaseProblem(ABC):
     Обязан уметь считать значение.
     """
 
+    def __init__(self):
+        self._fevals = 0
+
     @property
     @abstractmethod
     def dimension(self) -> int:
@@ -17,9 +20,22 @@ class BaseProblem(ABC):
         pass
 
     @abstractmethod
-    def evaluate(self, x: np.ndarray) -> float:
+    def _evaluate(self, x: np.ndarray) -> float:
         """Значение целевой функции f(x)."""
         pass
+
+    def evaluate(self, x: np.ndarray) -> float:
+        """Значение целевой функции f(x) с подсчетом вызовов."""
+        self._fevals += 1
+        return self._evaluate(x)
+
+    def get_fevals(self) -> int:
+        """Получить количество вызовов целевой функции."""
+        return self._fevals
+
+    def reset_fevals(self) -> None:
+        """Сбросить счетчик вызовов целевой функции."""
+        self._fevals = 0
 
 
 class DifferentiableProblem(BaseProblem):
@@ -64,6 +80,7 @@ class ContinuousProblem(DifferentiableProblem):
     """
 
     def __init__(self, bounds: Optional[List[Tuple[float, float]]] = None):
+        super().__init__()
         self.bounds = bounds  # [(min, max), ...]
 
     # Для непрерывных задач gradient_batch не имеет смысла в контексте данных,
