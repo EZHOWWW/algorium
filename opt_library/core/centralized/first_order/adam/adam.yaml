@@ -1,0 +1,20 @@
+name: "Adaptive Moment Estimation"
+abbreviation: "Adam"
+category:
+  level_1: "centralized"
+  level_2: "first_order"
+tags:
+  - "adaptive_learning_rate"
+  - "momentum"
+  - "convex"
+  - "non-convex"
+reference:
+  authors: ["Diederik P. Kingma", "Jimmy Ba"]
+  title: "Adam: A Method for Stochastic Optimization"
+  venue: "arXiv"
+  year: 2014
+  url: "https://arxiv.org/abs/1412.6980"
+implementation:
+  file: "adam.py"
+  class: "Adam"
+  notes: "Adam is an optimization algorithm that can be used instead of the classical stochastic gradient descent procedure to update network weights iterative based in training data."

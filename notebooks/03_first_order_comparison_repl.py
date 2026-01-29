@@ -11,11 +11,15 @@ if os.path.basename(os.getcwd()) == "notebooks":
 import matplotlib.pyplot as plt
 import numpy as np
 
+from opt_library.core.centralized.first_order.adadelta.adadelta import Adadelta
+from opt_library.core.centralized.first_order.adagrad.adagrad import Adagrad
+from opt_library.core.centralized.first_order.adam.adam import Adam
 from opt_library.core.centralized.first_order.gradient_descent.gradient_descent import (
     GradientDescent,
 )
 from opt_library.core.centralized.first_order.momentum.momentum import Momentum
 from opt_library.core.centralized.first_order.nesterov.nesterov import Nesterov
+from opt_library.core.centralized.first_order.rmsprop.rmsprop import RMSProp
 from opt_library.core.common.base_problem import DifferentiableProblem
 from opt_library.simulator.base_logger import ListLogger
 from opt_library.simulator.base_stopping_condition import (
@@ -214,6 +218,10 @@ algorithms_to_compare = [
     (GradientDescent, {"learning_rate": 0.001}, "GD"),
     (Momentum, {"learning_rate": 0.001, "gamma": 0.9}, "Momentum"),
     (Nesterov, {"learning_rate": 0.001, "gamma": 0.9}, "Nesterov"),
+    (Adagrad, {"learning_rate": 0.1}, "Adagrad"),
+    (RMSProp, {"learning_rate": 0.01, "beta": 0.9}, "RMSProp"),
+    (Adadelta, {"rho": 0.95, "epsilon": 1e-6}, "Adadelta"),
+    (Adam, {"learning_rate": 0.01, "beta1": 0.9, "beta2": 0.999}, "Adam"),
 ]
 
 # %%
@@ -273,6 +281,10 @@ lr_algorithms = [
     (GradientDescent, {"learning_rate": 0.1}, "GD"),
     (Momentum, {"learning_rate": 0.1, "gamma": 0.7}, "Momentum"),
     (Nesterov, {"learning_rate": 0.1, "gamma": 0.7}, "Nesterov"),
+    (Adagrad, {"learning_rate": 0.5}, "Adagrad"),
+    (RMSProp, {"learning_rate": 0.1, "beta": 0.9}, "RMSProp"),
+    (Adadelta, {"rho": 0.9, "epsilon": 1e-6}, "Adadelta"),
+    (Adam, {"learning_rate": 0.1, "beta1": 0.9, "beta2": 0.999}, "Adam"),
 ]
 
 run_and_plot_comparison(

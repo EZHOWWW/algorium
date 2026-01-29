@@ -1,0 +1,19 @@
+name: "Root Mean Square Propagation"
+abbreviation: "RMSProp"
+category:
+  level_1: "centralized"
+  level_2: "first_order"
+tags:
+  - "adaptive_learning_rate"
+  - "convex"
+  - "non-convex"
+reference:
+  authors: ["Geoffrey Hinton"]
+  title: "Lecture 6.5 - rmsprop"
+  venue: "Coursera"
+  year: 2012
+  url: "https://www.cs.toronto.edu/~tijmen/csc321/slides/lecture_slides_lec6.pdf"
+implementation:
+  file: "rmsprop.py"
+  class: "RMSProp"
+  notes: "RMSProp divides the learning rate by an exponentially decaying average of squared gradients."
