@@ -84,8 +84,15 @@ class SPSA(BaseAlgorithm):
         y_minus = problem.evaluate(x_minus)
 
         # Estimate gradient
-        # Add a small epsilon to avoid division by zero
-        grad_est = (y_plus - y_minus) / (2 * ck * delta + 1e-8)
+        denominator = 2 * ck * delta
+        # Avoid division by zero if ck is close to zero.
+        # Where the denominator is zero, the gradient estimate will be zero.
+        grad_est = np.divide(
+            (y_plus - y_minus),
+            denominator,
+            out=np.zeros_like(delta, dtype=float),
+            where=denominator != 0,
+        )
 
         # Update x
         self.x = self.x - ak * grad_est
