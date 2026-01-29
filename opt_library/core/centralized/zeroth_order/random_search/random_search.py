@@ -30,14 +30,22 @@ class RandomSearch(BaseAlgorithm):
         self.y = problem.evaluate(self.x)
 
         if logger:
-            logger.log({"x": self.x, "value": self.y})
+            logger.log(
+                {"x": self.x, "value": self.y, "fevals": problem.get_fevals()}
+            )
 
         while not stopping_condition or not stopping_condition.should_stop(
-            {"x": self.x}
+            {"x": self.x, "fevals": problem.get_fevals()}
         ):
             self.step(problem=problem)
             if logger:
-                logger.log({"x": self.x, "value": self.y})
+                logger.log(
+                    {
+                        "x": self.x,
+                        "value": self.y,
+                        "fevals": problem.get_fevals(),
+                    }
+                )
 
         return self.x, self.y
 

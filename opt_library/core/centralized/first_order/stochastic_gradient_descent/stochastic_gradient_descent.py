@@ -17,7 +17,8 @@ class StochasticGradientDescent(BaseAlgorithm):
         self.learning_rate = learning_rate
         self.batch_size = batch_size
         self.epochs = epochs
-        self.x = None
+        self.x: Optional[np.ndarray] = None
+        self.y: Optional[float] = None
 
     def fit(
         self,
@@ -30,10 +31,21 @@ class StochasticGradientDescent(BaseAlgorithm):
         """Fit the algorithm to a given problem."""
 
         self.x = starting_point
+        self.y = problem.evaluate(self.x)
+
+        if logger:
+            logger.log(
+                {
+                    "x": self.x,
+                    "value": self.y,
+                    "fevals": problem.get_fevals(),
+                    "epoch": 0,
+                }
+            )
 
         for epoch in range(self.epochs):
             if stopping_condition and stopping_condition.should_stop(
-                {"x": self.x}
+                {"x": self.x, "fevals": problem.get_fevals()}
             ):
                 break
             self.step(problem=problem)
@@ -42,12 +54,13 @@ class StochasticGradientDescent(BaseAlgorithm):
                 logger.log(
                     {
                         "x": self.x,
-                        "value": problem.evaluate(self.x),
-                        "epoch": epoch,
+                        "value": self.y,
+                        "fevals": problem.get_fevals(),
+                        "epoch": epoch + 1,
                     }
                 )
 
-        return self.x, problem.evaluate(self.x)
+        return self.x, self.y
 
     def step(self, problem: FiniteSumProblem, **kwargs: Any) -> None:
         """Perform a single step of the optimization algorithm."""
@@ -59,3 +72,4 @@ class StochasticGradientDescent(BaseAlgorithm):
         grad = problem.gradient_batch(self.x, indices=indices)
 
         self.x = self.x - self.learning_rate * grad
+        self.y = problem.evaluate(self.x)
