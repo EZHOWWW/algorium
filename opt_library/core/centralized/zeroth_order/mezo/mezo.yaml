@@ -1,0 +1,16 @@
+name: MeZO
+full_name: Memory-Efficient Zeroth-Order Optimization
+description: A memory-efficient zeroth-order optimizer that uses in-place updates and random seed regeneration to fine-tune large models with minimal memory overhead.
+type: centralized
+family: zeroth-order
+references:
+  - "Malladi, S., Chen, T., Bubeck, S., & Lee, Y. T. (2023). MeZO: Memory-Efficient Zeroth-Order Optimization for Fine-tuning Large Language Models. arXiv preprint arXiv:2305.17333."
+parameters:
+  - name: learning_rate
+    type: float
+    default: 0.01
+    description: The step size for the update.
+  - name: epsilon
+    type: float
+    default: 0.01
+    description: The magnitude of the perturbation.
