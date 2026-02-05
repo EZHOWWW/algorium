@@ -37,9 +37,7 @@ from opt_library.simulator.problems import (
 # ==============================================================================
 
 
-def plot_convergence_paths(
-    problem: DifferentiableProblem, logs: list, titles: list
-):
+def plot_convergence_paths(problem: DifferentiableProblem, logs: list, titles: list):
     """Plots the 2D convergence path of optimization algorithms."""
     if problem.dimension != 2:
         print("Cannot plot 2D path for non-2D problem.")
@@ -55,10 +53,7 @@ def plot_convergence_paths(
     X, Y = np.meshgrid(x, y)
     problem.reset_fevals()
     Z = np.array(
-        [
-            problem._evaluate(np.array([x, y]))
-            for x, y in zip(X.ravel(), Y.ravel())
-        ]
+        [problem._evaluate(np.array([x, y])) for x, y in zip(X.ravel(), Y.ravel())]
     ).reshape(X.shape)
     problem.reset_fevals()
 
@@ -196,18 +191,14 @@ class RosenbrockProblem(DifferentiableProblem):
         return self._dimension
 
     def _evaluate(self, x: np.ndarray) -> float:
-        return float(
-            sum(100.0 * (x[1:] - x[:-1] ** 2.0) ** 2.0 + (1 - x[:-1]) ** 2.0)
-        )
+        return float(sum(100.0 * (x[1:] - x[:-1] ** 2.0) ** 2.0 + (1 - x[:-1]) ** 2.0))
 
     def gradient(self, x: np.ndarray) -> np.ndarray:
         xm = x[1:-1]
         xm_m1 = x[:-2]
         xm_p1 = x[2:]
         grad = np.zeros_like(x)
-        grad[1:-1] = (
-            200 * (xm - xm_m1**2) - 400 * (xm_p1 - xm**2) * xm - 2 * (1 - xm)
-        )
+        grad[1:-1] = 200 * (xm - xm_m1**2) - 400 * (xm_p1 - xm**2) * xm - 2 * (1 - xm)
         grad[0] = -400 * x[0] * (x[1] - x[0] ** 2) - 2 * (1 - x[0])
         grad[-1] = 200 * (x[-1] - x[-2] ** 2)
         return grad

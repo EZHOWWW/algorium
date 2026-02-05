@@ -36,11 +36,11 @@ class RMSProp(BaseAlgorithm):
         self.ms_grad = np.zeros_like(self.x, dtype=float)
 
         while not stopping_condition or not stopping_condition.should_stop(
-            {"x": self.x}
+            {"x": self.x, "fevals": problem.get_fevals()}
         ):
             self.step(problem=problem)
             if logger:
-                logger.log({"x": self.x, "value": problem.evaluate(self.x)})
+                logger.log({"x": self.x, "value": problem.evaluate(self.x), "fevals": problem.get_fevals()})
 
         return self.x, problem.evaluate(self.x)
 
